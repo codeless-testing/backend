@@ -1,18 +1,29 @@
 version: "3.9"
 
 services:
-  app:
-    build: .
-    container_name: express_app
-    restart: unless-stopped
+  api:
+    image: ghcr.io/codeless-testing/backend/api:latest
+    container_name: backend
+    restart: on-failure
     environment:
       - MONGO_URI=mongodb://mongo:27017/codeless
       - NODE_ENV=production
       - PORT=3000
+    env_file:
+      - .env
+    build:
+      context: .
+      target: development
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    command: npm run start
     ports:
-      - "3000:3000"
+      - 3000:3000
+    networks:
+      - backend
     depends_on:
-      - mongo
+        - mongo
 
   mongo:
     image: mongo:7.0
@@ -22,6 +33,13 @@ services:
       - MONGO_INITDB_DATABASE=codeless
     volumes:
       - mongo_data:/data/db
+    networks:
+      - backend
+
+        
+networks:
+  backend:
+    driver: bridge
 
 volumes:
   mongo_data:
