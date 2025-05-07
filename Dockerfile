@@ -1,15 +1,23 @@
-# ---------- 1️⃣ Build stage ----------
-FROM node:18-alpine
+FROM node:18-alpine as builder
+
 WORKDIR /app
 
-COPY . .
-RUN npm ci
+COPY . /app
 
-RUN npm run build      # outputs to ./dist
+RUN npm install
+RUN npm run build
 
-# Pull in the compiled output from the builder
-COPY dist dist
+# ---
 
-ENV NODE_ENV=production
+FROM node:18-alpine
+
+ENV NODE_ENV production
+
+WORKDIR /app
+
+COPY --from=builder /app/package*.json /app
+COPY --from=builder /app/node_modules/ /app/node_modules/
+COPY --from=builder /app/dist/ /app/dist/
+
 EXPOSE 3000
 CMD ["node", "dist/index.js"]
