@@ -2,7 +2,8 @@ name: DistStudy CI
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - main
 #  pull_request:
 #    branches: [ master ]
 
