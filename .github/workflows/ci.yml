@@ -30,7 +30,7 @@ jobs:
           key: ${{ secrets.DO_SSH_KEY }}
           port: ${{ secrets.DO_PORT }}
           source: "docker-compose.yml"
-          target: "/root"
+          target: "/home/ubuntu"
       - name: Deploy package to EC2
         uses: appleboy/ssh-action@master
         env:
