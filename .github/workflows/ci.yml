@@ -16,6 +16,16 @@ jobs:
       - name: Publish to Github Packages Registry
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
+          name: codeless-testing/backend/api-server
+          registry: ghcr.io
+          username: "codeless_user"
+          password: ${{ secrets.GITHUB_TOKEN }}
+          dockerfile: Dockerfile-api-nginx
+          tags: latest
+      - uses: actions/checkout@v1
+      - name: Publish to Github Packages Registry
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
           name: codeless-testing/backend/api
           registry: ghcr.io
           username: "codeless_user"
@@ -48,4 +58,5 @@ jobs:
             docker rm $(docker ps -a -f status=exited -q)
             docker login ghcr.io -u $GITHUB_USERNAME -p $GITHUB_TOKEN
             docker pull ghcr.io/codeless-testing/backend/api:latest
+            docker pull ghcr.io/codeless-testing/backend/api-server:latest
             docker compose -f docker-compose.yml --env-file .env up -d

@@ -1,6 +1,19 @@
 version: "3.9"
 
 services:
+  nginx:
+    image: ghcr.io/diststudy/diststudy-api/api-server:latest
+    container_name: nginx
+    restart: on-failure
+    networks:
+      - backend
+    ports:
+      - 80:80
+      - 443:443
+      - 5432:5432
+    volumes:
+      - ssl_data:/etc/resty-auto-ssl
+
   api:
     image: ghcr.io/codeless-testing/backend/api:latest
     container_name: backend
@@ -36,10 +49,11 @@ services:
     networks:
       - backend
 
-        
+
 networks:
   backend:
     driver: bridge
 
 volumes:
   mongo_data:
+  ssl_data:
