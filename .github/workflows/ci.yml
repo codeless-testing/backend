@@ -26,7 +26,7 @@ jobs:
         with:
           host: ${{ secrets.DO_HOST }}
           username: ${{ secrets.DO_USERNAME }}
-          password: ${{ secrets.DO_PASSWORD }}
+          key: ${{ secrets.DO_SSH_KEY }}
           port: ${{ secrets.DO_PORT }}
           source: "docker-compose.yml"
           target: "/root"
@@ -38,7 +38,7 @@ jobs:
         with:
           host: ${{ secrets.DO_HOST }}
           username: ${{ secrets.DO_USERNAME }}
-          password: ${{ secrets.DO_PASSWORD }}
+          key: ${{ secrets.DO_SSH_KEY }}
           port: ${{ secrets.DO_PORT }}
           envs: GITHUB_USERNAME, GITHUB_TOKEN
           script: |
