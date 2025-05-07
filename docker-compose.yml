@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   nginx:
-    image: ghcr.io/diststudy/diststudy-api/api-server:latest
+    image: ghcr.io/codeless-testing/backend/api-server:latest
     container_name: nginx
     restart: on-failure
     networks:
