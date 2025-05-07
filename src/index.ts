@@ -4,7 +4,11 @@ import {environments} from "./environments/environments";
 import * as mongoose from "mongoose";
 import {casesRouter} from "./routes/cases/cases.router";
 
+
+const cors = require('cors')
+
 const app = express();
+
 
 const {PORT, MONGO_URI} = environments;
 
@@ -16,6 +20,7 @@ mongoose.connect(MONGO_URI).then(() => {
       console.error('Error connecting to MongoDB:', error);
     });
 app.use(express.json());
+app.use(cors())
 
 app.use('/', indexRouter);
 app.use('/cases', casesRouter);
