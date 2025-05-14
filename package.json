@@ -10,6 +10,7 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@aws-sdk/client-amplify": "^3.810.0",
     "@aws-sdk/client-s3": "^3.810.0",
     "aws-sdk": "^2.1692.0",
     "cookie-parser": "~1.4.4",

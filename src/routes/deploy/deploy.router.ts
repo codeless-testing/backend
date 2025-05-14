@@ -1,65 +1,70 @@
-import express = require("express");
-const multer = require('multer');
-const unzipper = require('unzipper');
-import {S3Client, PutObjectCommand} from "@aws-sdk/client-s3";
-import {environments} from "../../environments/environments";
+import express from "express";
+import multer  from "multer";
 
-const {ACCESS_KEY_ID, SECRET_ACCESS_KEY} = environments;
+import {
+    AmplifyClient,
+    CreateDeploymentCommand,
+    StartDeploymentCommand,
+} from "@aws-sdk/client-amplify";
+import {waitForJobDone} from "./wait-function";
 
-export const deployRouter  = express.Router();
+export const deployRouter = express.Router();
 
-/*─── 1.  BASIC WIRING ───────────────────────────────────────────────────────*/
-const upload = multer({ storage: multer.memoryStorage() });   // <- keeps file in RAM
-const s3     = new S3Client({ region: process.env.AWS_REGION });
+/*─── 1. BASIC WIRING ───────────────────────────────────────────────────────*/
+const upload  = multer({ storage: multer.memoryStorage() });   // keep file in RAM
+const region  = process.env.AWS_REGION as string;
+const amplify = new AmplifyClient({ region });
 
-/*─── 2.  THE ENDPOINT ───────────────────────────────────────────────────────*/
-//@ts-ignore
-deployRouter.post('/upload-zip', upload.single('artifact'), async (req, res, next) => {
-    //@ts-ignore
-    if (!req.file) return res.status(400).json({ error: 'file field missing' });
-    //@ts-ignore
-    const zipKey = req.file.originalname;
+/*─── 2. THE ENDPOINT ───────────────────────────────────────────────────────*/
+deployRouter.post(
+    "/upload-zip",
+    upload.single("artifact"),
+    async (req, res, next) => {
+        if (!req.file)
+            return res.status(400).json({ error: "file field missing" });
 
-    try {
-        /* 2-a Upload the raw ZIP (handy for auditing / re-processing later) */
-        await s3.send(new PutObjectCommand({
-            Bucket: process.env.BUCKET_NAME,
-            Key:    zipKey,
-            //@ts-ignore
-            Body:   req.file.buffer,
-            ContentType: 'application/zip',
-        }));
+        try {
+            /* 3-a. Create one-time upload URL */
+            const { jobId, zipUploadUrl } = await amplify.send(
+                new CreateDeploymentCommand({
+                    appId:      process.env.AMPLIFY_APP_ID!,
+                    branchName: process.env.AMPLIFY_BRANCH!,
+                })
+            );
 
-        /* 2-b Extract & upload every entry in parallel (throttled by Promise.all) */
-        const directory = await unzipper.Open.buffer(req.file.buffer);
+            /* 3-b. PUT the ZIP to that URL */
+            await fetch(zipUploadUrl!, {
+                method:  "PUT",
+                body:    req.file.buffer,
+                headers: { "content-type": "application/zip" },
+            });
 
-        console.log(directory.files)
+            /* 3-c. Start the deployment */
+            await amplify.send(
+                new StartDeploymentCommand({
+                    appId:      process.env.AMPLIFY_APP_ID!,
+                    branchName: process.env.AMPLIFY_BRANCH!,
+                    jobId,
+                })
+            );
 
-        await Promise.all(
-            directory.files.map(async file => {
-                if (file.type !== 'File') return;
+            /* 3-d. ⏳ Wait until Amplify finishes building */
+            const finalSummary = await waitForJobDone(
+                amplify,
+                process.env.AMPLIFY_APP_ID!,
+                process.env.AMPLIFY_BRANCH!,
+                jobId
+            );                                         // GetJob API used above :contentReference[oaicite:1]{index=1}
 
-                const parts = file.path.split('/');
-
-                const trimmedPath = parts.length > 1 ? parts.slice(1).join('/') : file.path;
-                if (!trimmedPath) return;                    // safety: ignore top-level dir entry
-
-                const body      = await file.buffer();                   // <Buffer …>
-
-                await s3.send(new PutObjectCommand({
-                    Bucket: process.env.BUCKET_NAME,
-                    Key:    trimmedPath,
-                    Body:   body,
-                }));
-            })
-        );
-
-        res.json({
-            message:    'ZIP stored and extracted to S3',
-            zipObject:  zipKey,
-            filesCount: directory.files.length,
-        });
-    } catch (err) {
-        next(err);                   // let your global error middleware handle it
+            res.json({
+                message:  "Deployment finished",
+                jobId,
+                finalStatus:  finalSummary.status,       // SUCCEED / FAILED / CANCELLED
+                started:      new Date(finalSummary.startTime!).toISOString(),
+                ended:        new Date(finalSummary.endTime!).toISOString(),
+            });
+        } catch (err) {
+            next(err);
+        }
     }
-});
+);
