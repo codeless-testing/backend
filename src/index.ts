@@ -3,6 +3,7 @@ import {indexRouter} from "./routes";
 import {environments} from "./environments/environments";
 import * as mongoose from "mongoose";
 import {casesRouter} from "./routes/cases/cases.router";
+import {deployRouter} from "./routes/deploy/deploy.router";
 
 
 const cors = require('cors')
@@ -24,6 +25,7 @@ app.use(cors())
 
 app.use('/', indexRouter);
 app.use('/cases', casesRouter);
+app.use('/deploy', deployRouter);
 
 
 app.listen(PORT, () => {
