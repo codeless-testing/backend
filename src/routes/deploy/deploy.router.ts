@@ -1,12 +1,8 @@
 import express = require("express");
 const multer = require('multer');
-// const AWS = require('aws-sdk');
-const fs = require('fs');
 const unzipper = require('unzipper');
-const path = require('path');
-import {S3Client, ListBucketsCommand, PutObjectCommand} from "@aws-sdk/client-s3";
+import {S3Client, PutObjectCommand} from "@aws-sdk/client-s3";
 import {environments} from "../../environments/environments";
-import {uploadDirectoryToS3} from "./upload-function";
 
 const {ACCESS_KEY_ID, SECRET_ACCESS_KEY} = environments;
 
@@ -37,11 +33,15 @@ deployRouter.post('/upload-zip', upload.single('artifact'), async (req, res, nex
         /* 2-b Extract & upload every entry in parallel (throttled by Promise.all) */
         const directory = await unzipper.Open.buffer(req.file.buffer);
 
+        console.log(directory.files)
+
         await Promise.all(
             directory.files.map(async file => {
-                if (file.type !== 'File') return;      // skip directories / symlinks
+                if (file.type !== 'File') return;
 
-                const trimmedPath = file.path.split('/').slice(1).join('/');
+                const parts = file.path.split('/');
+
+                const trimmedPath = parts.length > 1 ? parts.slice(1).join('/') : file.path;
                 if (!trimmedPath) return;                    // safety: ignore top-level dir entry
 
                 const body      = await file.buffer();                   // <Buffer …>
