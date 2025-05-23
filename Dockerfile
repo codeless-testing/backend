@@ -6,9 +6,11 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 # copy only manifests first for better layer caching
-COPY . /app
+COPY package*.json ./
 RUN npm ci --omit=dev              # prod-only deps, faster & repeatable
 
+# now copy sources and build
+COPY . .
 RUN npm run build                  # creates ./dist
 
 ############################
