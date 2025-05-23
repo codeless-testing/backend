@@ -1,23 +1,32 @@
-FROM node:18-alpine as builder
+############################
+# 1 --- Build stage (tiny) #
+############################
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-COPY . /app
+# copy only manifests first for better layer caching
+COPY package*.json ./
+RUN npm ci --omit=dev              # prod-only deps, faster & repeatable
 
-RUN npm install
-RUN npm run build
+# now copy sources and build
+COPY . .
+RUN npm run build                  # creates ./dist
 
-# ---
+############################
+# 2 --- Runtime stage      #
+############################
+# Playwright image = Ubuntu Jammy + Node + all browsers + fonts + libs
+# choose the tag that matches the Playwright version in package.json
+FROM mcr.microsoft.com/playwright:v1.44.1-jammy
 
-FROM node:18-alpine
-
-ENV NODE_ENV production
-
+ENV NODE_ENV=production
 WORKDIR /app
 
-COPY --from=builder /app/package*.json /app
-COPY --from=builder /app/node_modules/ /app/node_modules/
-COPY --from=builder /app/dist/ /app/dist/
+# copy minimal runtime artefacts
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist         ./dist
+COPY --from=builder /app/package*.json ./
 
 EXPOSE 3000
 CMD ["node", "dist/index.js"]
