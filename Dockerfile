@@ -7,6 +7,7 @@ WORKDIR /app
 
 # copy only manifests first for better layer caching
 COPY package*.json ./
+COPY esbuild.build.mjs ./
 RUN npm ci --omit=dev              # prod-only deps, faster & repeatable
 
 # now copy sources and build
