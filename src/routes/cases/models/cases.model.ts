@@ -1,6 +1,10 @@
 import * as mongoose from "mongoose";
 
 const CasesSchema = new mongoose.Schema({
+    url: {
+        type: String,
+        required: true,
+    },
     clientId: {
         type: String,
         required: true,
@@ -11,6 +15,7 @@ const CasesSchema = new mongoose.Schema({
     },
     cases: [{
         class: String,
+        id: String,
         params: {
             width: String,
             height: String,
@@ -18,9 +23,11 @@ const CasesSchema = new mongoose.Schema({
             backgroundColor: String,
             font: String,
             fontSize: String,
+            fontWeight: String,
             borderSize: String,
             borderColor: String,
         },
+        click: Boolean,
         redirectUrl: String
     }]
 }, {
