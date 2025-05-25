@@ -18,7 +18,7 @@ RUN npm run build                  # creates ./dist
 ############################
 # Playwright image = Ubuntu Jammy + Node + all browsers + fonts + libs
 # choose the tag that matches the Playwright version in package.json
-FROM mcr.microsoft.com/playwright:v1.44.1-jammy
+FROM mcr.microsoft.com/playwright:v1.52.0-jammy
 
 ENV NODE_ENV=production
 WORKDIR /app
