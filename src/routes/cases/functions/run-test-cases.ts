@@ -31,7 +31,12 @@ export async function runTestCases(data, headed) {
 
     const logs = [];
     const errors = [];
-    const browser = await chromium.launch({ headless: !headed });
+    const browser = await chromium.launch({
+        headless: true,
+        args: [
+            `--disable-gpu`,
+        ],
+    });
     const context = await browser.newContext();
     const page = await context.newPage();
 
